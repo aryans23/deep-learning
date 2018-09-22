@@ -1,0 +1,508 @@
+\documentclass[letterpaper]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[]{algorithm2e}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{afterpage}
+\usepackage[toc,page]{appendix}
+
+\newcommand\blankpage{%
+	\null
+	\thispagestyle{empty}%
+	\addtocounter{page}{-1}%
+	\newpage}
+
+\title{Deep LearningI}
+\author{Aryan Sharma (UIN: 326006767)}
+
+\date{\today}
+
+\begin{document}
+%\maketitle
+
+%\afterpage{\blankpage}
+%\newpage
+
+\begin{titlepage}
+	\centering
+	%\includegraphics[width=0.15\textwidth]{example-image-1x1}\par\vspace{1cm}
+	{\scshape\LARGE Texas A\&M University \par}
+	\vspace{1cm}
+	{\scshape\Large \par}
+	\vspace{1.5cm}
+	{\huge\bfseries Survey on Deep Learning\par}
+	\vspace{2cm}
+	{\Large Aryan Sharma \par}
+	{\normalsize UIN: 326006767 | aryans@tamu.edu\par}
+	\vfill
+	
+	% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+%\afterpage{\blankpage}
+
+\newpage
+
+\section{Introduction}
+
+This is a survey of Neural Networks and Deep Learning.
+
+\section{Basics of Machine Learning}
+
+\subsection{Validation}
+
+\begin{itemize}
+	\item Need to tune the hyperparameters involved
+	\item Cannot use the test data for this as it will overfit
+	\item Use cross-validation
+\end{itemize}
+
+\section{Linear Classifiers}
+
+Linear mapping: \(f(x_i, W, b) = Wx_i+b\). Set \(W\) and \(b\) in such way that the computed scores match the ground truth labels across the whole training set \(x\).
+
+\subsection{Multiclass SVM loss}
+
+The SVM loss is set up so that the SVM wants the correct class for each image to a have a score higher than the incorrect classes by some fixed margin $\Delta$. For the \(i^{th}\) example we are given the input \(x_i\) and the label \(y_i\) that specifies the index of the correct class. The score function takes the input and computes the vector \(f(x_i,W)\) of class scores, which we will abbreviate to \(s\) (short for scores). For example, the score for the \(j^{th}\) class is the \(j^{th}\) element: \(s_j=f(x_i,W)_j\). The SVM loss is then: 
+\[L_i = \sum\limits_{j \neq y_i} max(0, s_j - s_i + \Delta)\]. 
+
+L2 Regularization is added to the above equation that discourages large weights through an elementwise quadratic penalty over all parameters. 
+\[R(W) = \sum\limits_{k} \sum\limits_{l} W_{k,l}^2\].
+
+The margin $\Delta$ can be safely kept as 1 when regularization is added. The whole loss is then defined as: 
+\[L = \frac{1}{N}\sum\limits_{i} \sum\limits_{j \neq y_i} [max(0, (f(x_i,W))_j - (f(x_i,W))_{y_i} + \Delta)] + \lambda\sum\limits_{k} \sum\limits_{l} W_{k,l}^2\]
+
+\subsection{Softmax Classifiers}
+
+Interpret the scores as the unnormalized log probabilities for each class and replace the hinge loss with a cross-entropy loss that has the form: 
+\[L_i = -log(\frac{e^{f_{y_i}}}{\sum_{j} e^{f_{y_j}}})\]
+
+This provides probabilities for each class. 
+
+\section{Neurons}
+
+\subsection{Backpropagation}
+
+Every gate in a circuit diagram gets some inputs and can right away compute two things: 1. its output value and 2. the local gradient of its inputs with respect to its output value. Notice that the gates can do this completely independently without being aware of any of the details of the full circuit that they are embedded in. However, once the forward pass is over, during backpropagation the gate will eventually learn about the gradient of its output value on the final output of the entire circuit. Chain rule says that the gate should take that gradient and multiply it into every gradient it normally computes for all of its inputs. Backpropagation can thus be thought of as gates communicating to each other (through the gradient signal) whether they want their outputs to increase or decrease (and how strongly), so as to make the final output value higher.
+
+\subsubsection{Practical Aspects}
+
+\begin{enumerate}
+	\item Cache forward pass variables as they are needed to compute gradient in backprop.
+	\item Gradients add up at forks.
+	\item The add gate always takes the gradient on its output and distributes it equally to all of its inputs, regardless of what their values were during the forward pass. 
+	\item The max gate routes the gradient during backprop.
+\end{enumerate}
+
+\subsection{Single neuron as a classifier}
+
+The neuron comes with an activation function like sigmoid. Optimizing the cross entropy loss can lead to binary softmax classifier or binary SVM classifier. The commonly used activation functions are:
+
+\subsubsection{Sigmoid}
+
+Sigmoid, \(\sigma(x) = 1/(1 + e^{-x})\) takes a real-valued number and squashes it into range between 0 and 1. In particular, large negative numbers become 0 and large positive numbers become 1. 
+
+The drawbacks are:
+
+\begin{itemize}
+	\item Sigmoids saturate and kill gradients. During backpropagation, the local gradient will be multiplied to the gradient of the gate’s output for the whole objective. Therefore, if the local gradient is very small, it will effectively 'kill' the gradient and almost no signal will flow through the neuron to its weights and recursively to its data. The network will barely learn.
+	\item Sigmoid outputs are not zero-centered. This is undesirable since neurons in later layers of processing in a Neural Network (more on this soon) would be receiving data that is not zero-centered. This has implications on the dynamics during gradient descent, because if the data coming into a neuron is always positive (e.g. \(x > 0 \) elementwise in \(f=w^Tx+b\)), then the gradient on the weights w will during backpropagation become either all be positive, or all negative (depending on the gradient of the whole expression f). This could introduce undesirable zig-zagging dynamics in the gradient updates for the weights.
+\end{itemize}
+
+\subsubsection{tanh}
+
+Like the sigmoid neuron, its activations saturate, but unlike the sigmoid neuron its output is zero-centered. Therefore, in practice the tanh non-linearity is always preferred to the sigmoid nonlinearity. 
+
+\subsubsection{ReLU}
+
+\(f(x) = max(0, x)\)
+
+\begin{itemize}
+	\item It was found to greatly accelerate the convergence of stochastic gradient descent compared to the sigmoid/tanh functions. It is argued that this is due to its linear, non-saturating form.
+	\item Compared to tanh/sigmoid neurons that involve expensive operations (exponentials, etc.), the ReLU can be implemented by simply thresholding a matrix of activations at zero.
+	\item Unfortunately, ReLU units can be fragile during training and can “die”. For example, a large gradient flowing through a ReLU neuron could cause the weights to update in such a way that the neuron will never activate on any datapoint again. If this happens, then the gradient flowing through the unit will forever be zero from that point on. That is, the ReLU units can irreversibly die during training since they can get knocked off the data manifold. 
+\end{itemize}
+
+\subsubsection{Leaky ReLU}
+
+Instead of the function being zero when x < 0, a leaky ReLU will instead have a small negative slope. The slope in the negative region can also be made into a parameter of each neuron, as seen in PReLU neurons. 
+
+\subsubsection{Maxout} 
+
+Generalizes the ReLU and its leaky version. The Maxout neuron computes the function \(max(w^T_1x+b1,w^T_2x+b2)\).
+
+\section{Neural Networks}
+
+Neural Network models are often organized into distinct layers of neurons. For regular neural networks, the most common layer type is the fully-connected layer in which neurons between two adjacent layers are fully pairwise connected, but neurons within a single layer share no connections. Unlike all layers in a Neural Network, the output layer neurons most commonly do not have an activation function. This is because the last output layer is usually taken to represent the class scores (e.g. in classification), which are arbitrary real-valued numbers, or some kind of real-valued target (e.g. in regression).
+
+Neural Networks work well in practice because they compactly express nice, smooth functions that fit well with the statistical properties of data we encounter in practice, and are also easy to learn using our optimization algorithms (e.g. gradient descent). Similarly, the fact that deeper networks (with multiple hidden layers) can work better than a single-hidden-layer networks is an empirical observation, despite the fact that their representational power is equal.
+
+\subsection{Data Preprocessing}
+
+\subsubsection{Mean substraction}
+
+Mean subtraction involves subtracting the mean across every individual feature in the data, and has the geometric interpretation of centering the cloud of data around the origin along every dimension. 
+
+\subsubsection{Normalization}
+
+Normalization refers to normalizing the data dimensions so that they are of approximately the same scale. There are two common ways of achieving this normalization. One is to divide each dimension by its standard deviation, once it has been zero-centered. Another form of this preprocessing normalizes each dimension so that the min and max along the dimension is -1 and 1 respectively.
+
+\subsubsection{PCA}
+
+In this process, the data is first centered as described above. Then, we can compute the covariance matrix that tells us about the correlation structure in the data. A nice property of \texttt{np.linalg.svd} is that in its returned value \texttt{U}, the eigenvector columns are sorted by their eigenvalues. We can use this to reduce the dimensionality of the data by only using the top few eigenvectors, and discarding the dimensions along which the data has no variance. This gives us the reduced dataset. This transformations is however, not used with Convolutional Networks. It is very important, though,  to zero-center the data, and it is common to see normalization of every pixel as well.
+
+\subsection{Weight Initialization}
+
+\subsubsection{Pitfall: All zero initialization}
+
+Shouldn't be done because if every neuron in the network computes the same output, then they will also all compute the same gradients during backpropagation and undergo the exact same parameter updates. In other words, there is no source of asymmetry between neurons if their weights are initialized to be the same.
+
+\subsubsection{Small random numbers}
+
+Initialize the weights of the neurons to small random numbers and refer to doing so as symmetry breaking. The idea is that the neurons are all random and unique in the beginning, so they will compute distinct updates and integrate themselves as diverse parts of the full network. One problem with the above suggestion is that the distribution of the outputs from a randomly initialized neuron has a variance that grows with the number of inputs. We can normalize the variance of each neuron’s output to 1 by scaling its weight vector by the square root of its fan-in (i.e. its number of inputs). \textbf{
+	Therefore 
+	\[W = np.random.randn(n)*\sqrt{\frac{1}{n}}\]
+	, where \(n\) is the number of its inputs.
+} This ensures that all neurons in the network initially have approximately the same output distribution and empirically improves the rate of convergence. 
+
+Consider the inner product \(s = \sum_{i}^{n} w_ix_i\) between the weights \(w\) and input \(x\), which gives the raw activation of a neuron before the non-linearity. Assuming zero mean inputs and weights and \textit{iid} \(x_i\) and \(w_i\), the variance of \(s\) is 
+\[Var(s) = Var(\sum_{i}^{n} w_ix_i) = (nVar(w))Var(x)\]
+
+From this derivation we can see that if we want \(s\) to have the same variance as all of its inputs \(x\), then during initialization we should make sure that the variance of every weight \(w\) is \(1/n\). And since \(Var(aX)=a^2Var(X)\) for a random variable \(X\) and a scalar \(a\), this implies that we should draw from unit gaussian and then scale it by \(a = \frac{1}{\sqrt{n}}\), to make its variance \(\frac{1}{\sqrt{n}}\). 
+
+Note that \textbf{in case of ReLU}, we use \[W = np.random.randn(n)*\sqrt{\frac{2}{n}}\]
+
+\textbf{Batch Normalization}: To properly initializing neural networks we explicitly force the activations throughout a network to take on a unit gaussian distribution at the beginning of the training. BatchNorm layers are inserted immediately after fully connected layers (or convolutional layers), and before non-linearities. It improves gradient flow through the network, allows higher learning rates, and reduces the strong dependence on initialization.
+
+\subsection{Things to monitor while learning}
+
+\subsubsection{Loss Function}
+
+The x-axis of the plots below are always in units of epochs, which measure how many times every example has been seen during training in expectation (e.g. one epoch means that every example has been seen once). The amount of 'wiggle' in the loss is related to the batch size. When the batch size is 1, the wiggle will be relatively high. When the batch size is the full dataset, the wiggle will be minimal because every gradient update should be improving the loss function monotonically (unless the learning rate is set too high).
+
+\subsubsection{Train/Val accuracy}
+
+The gap between the training and validation accuracy indicates the amount of overfitting. When there is a large gap, there is an overfitting. When we see this in practice we should increase regularization (stronger L2 weight penalty, more dropout, etc.) or collect more data. 
+
+The other possible case is when the validation accuracy tracks the training accuracy fairly well. This case indicates that the model capacity is not high enough: make the model larger by increasing the number of parameters.
+
+\subsection{Parameter Updates}
+
+\subsubsection{Vanilla SGD}
+
+Change the parameters along the negative gradient direction (since the gradient indicates the direction of increase, but we usually wish to minimize a loss function): \texttt{x += -learning\_rate * dx}
+
+\subsubsection{Momentum Update SGD}
+
+Here we see an introduction of a \texttt{v} variable that is initialized at zero, and an additional hyperparameter (\texttt{mu}). With Momentum update, the parameter vector will build up velocity in any direction that has consistent gradient.\\
+
+\texttt{v = mu * v - learning\_rate * dx ......\# integrate velocity}
+
+\texttt{x += v ...............................\# integrate position}
+
+\subsubsection{Nesterov Momentum SGD}
+
+The core idea behind Nesterov momentum is that when the current parameter vector is at some position \(x\), then looking at the momentum update above, we know that the momentum term alone (i.e. ignoring the second term with the gradient) is about to nudge the parameter vector by \(mu * v\). Therefore, if we are about to compute the gradient, we can treat the future approximate position \(x + mu * v\) as a “lookahead” - this is a point in the vicinity of where we are soon going to end up. Hence, it makes sense to compute the gradient at \(x + mu * v\) instead of at the “old/stale” position \(x\). This is what we want to do.\\
+
+\texttt{x\_ahead = x + mu * v}
+
+\texttt{\# evaluate dx\_ahead (the gradient at x\_ahead instead of at x)}
+
+\texttt{v = mu * v - learning\_rate * dx\_ahead}
+
+\texttt{x += v}\\
+
+
+We can make thee updates similar to SGD by manipulating the update above with a variable transform \(x\_ahead = x + mu * v\), and then expressing the update in terms of \(x\_ahead\) instead of \(x\). That is, the parameter vector we are actually storing is always the ahead version. The equations in terms of \(x\_ahead\) (but renaming it back to \(x\)) then become:\\
+
+\texttt{v\_prev = v \# back this up}
+
+\texttt{v = mu * v - learning\_rate * dx \# velocity update stays the same}
+
+\texttt{x += -mu * v\_prev + (1 + mu) * v \# position update changes form}\\
+
+\subsubsection{Annealing the learning rate over time}
+
+Knowing when to decay the learning rate can be tricky: Decay it slowly and you’ll be wasting computation bouncing around chaotically with little improvement for a long time. But decay it too aggressively and the system will cool too quickly, unable to reach the best position it can. There are three common types of implementing the learning rate decay:
+
+\begin{itemize}
+	\item \textbf{Step Decay:} Reduce the learning rate by some factor every few epochs.
+	\item \textbf{Exponential decay}: \(\alpha = \alpha_0e^{-kt}\) where \(t\) is iteration number
+	\item \textbf{1/t decay}: \(\alpha = \alpha_0/(1+kt)\) where \(t\) is iteration number
+\end{itemize}
+
+\subsubsection{Second Order Updates}
+
+Newton's method which updates by calculating the Hessian matrix, which is a square matrix of second-order partial derivatives of the function. Multiplying by the inverse Hessian leads the optimization to take more aggressive steps in directions of shallow curvature and shorter steps in directions of steep curvature. There is no hyperparameters as well. However, the update above is impractical for most deep learning applications because computing (and inverting) the Hessian in its explicit form is a very costly process in both space and time.
+
+\[x \leftarrow x - [H(f(x))]^{-1} \Delta f(x)\]
+
+\subsubsection{Adagrad}
+
+Adagrad is a per-parameter adaptive learning rate method. The variable \texttt{cache} has size equal to the size of the gradient, and keeps track of per-parameter sum of squared gradients. This is then used to normalize the parameter update step, element-wise. Notice that the weights that receive high gradients will have their effective learning rate reduced, while weights that receive small or infrequent updates will have their effective learning rate increased.\\
+
+\texttt{\# Assume the gradient dx and parameter vector x}
+
+\texttt{cache += dx**2}
+
+\texttt{x += - learning\_rate * dx / (np.sqrt(cache) + eps)}
+
+\subsubsection{RMSprop}
+
+The RMSProp update adjusts the Adagrad method to reduce its aggressive, monotonically decreasing learning rate. In particular, it uses a moving average of squared gradients instead. The cache here is leaky and decay\_rate is a hyperparameter (typically 0.9, 0.99, 0.999).\\
+
+\texttt{cache = decay\_rate * cache + (1 - decay\_rate) * dx**2}
+
+\texttt{x += - learning\_rate * dx / (np.sqrt(cache) + eps)}
+
+\subsubsection{Adam}
+
+RMSProp with momentum.\\
+
+\texttt{m = beta1*m + (1-beta1)*dx}
+
+\texttt{v = beta2*v + (1-beta2)*(dx**2)}
+
+\texttt{x += - learning\_rate * m / (np.sqrt(v) + eps)}\\
+
+\noindent RMSprop with momentum and bias correction mechanism.\\
+
+\texttt{\# t is your iteration counter going from 1 to infinity}
+
+\texttt{m = beta1*m + (1-beta1)*dx}
+
+\texttt{mt = m / (1-beta1**t)}
+
+\texttt{v = beta2*v + (1-beta2)*(dx**2)}
+
+\texttt{vt = v / (1-beta2**t)}
+
+\texttt{x += - learning\_rate * mt / (np.sqrt(vt) + eps)}\\
+
+\subsection{Model Ensemble}
+
+Train multiple independent models, and at test time average their predictions. As the number of models in the ensemble increases, the performance typically monotonically improves (though with diminishing returns). Moreover, the improvements are more dramatic with higher model variety in the ensemble. Few approaches are:
+
+\begin{itemize}
+	\item \textbf{Same model, different initializations.} Use cross-validation to determine the best hyperparameters, then train multiple models with the best set of hyperparameters but with different random initialization.
+	\item \textbf{Top models discovered during cross-validation.} Pick the top few (e.g. 10) models to form the ensemble after finding hyperparamters from cross-validation.
+	\item \textbf{Different checkpoints of a single model.}
+	\item \textbf{Running average of parameters during training.} Maintain a second copy of the network’s weights in memory that maintains an exponentially decaying sum of previous weights during training.
+\end{itemize}
+
+\subsection{Transfer Learning}
+
+TODO
+
+\section{Convolutional Neural Networks}
+
+So what does change from the vanilla Neural Network? ConvNet architectures make the explicit assumption that the inputs are images, which allows us to encode certain properties into the architecture. These then make the forward function more efficient to implement and vastly reduce the amount of parameters in the network.
+
+\subsection{Architecture Overview}
+
+Neural Networks receive an input (a single vector), and transform it through a series of hidden layers. Each hidden layer is made up of a set of neurons, where each neuron is fully connected to all neurons in the previous layer, and where neurons in a single layer function completely independently and do not share any connections. The last fully-connected layer is called the “output layer” and in classification settings it represents the class scores. Regular Neural Nets don’t scale well to full images and huge number of parameters quickly leads to overfitting.
+
+A ConvNet is made up of Layers. Every Layer has a simple API: It transforms an input 3D volume to an output 3D volume with some differentiable function that may or may not have parameters. Layers of a ConvNet have neurons arranged in 3 dimensions: width, height, depth. The neurons in a layer will only be connected to a small region of the layer before it, instead of all of the neurons in a fully-connected manner. 
+
+\subsection{Layers used to build ConvNets}
+
+We use three main types of layers to build ConvNet architectures: Convolutional Layer, Pooling Layer, and Fully-Connected Layer. 
+
+\begin{itemize}
+	\item A ConvNet architecture is in the simplest case a list of Layers that transform the image volume into an output volume (e.g. holding the class scores)
+	\item There are a few distinct types of Layers (e.g. CONV/FC/RELU/POOL are by far the most popular)
+	\item Each Layer accepts an input 3D volume and transforms it to an output 3D volume through a differentiable function
+	\item CONV layer will compute the output of neurons that are connected to local regions in the input, each computing a dot product between their weights and a small region they are connected to in the input volume. 
+	\item RELU layer will apply an elementwise activation function, such as the max(0,x) thresholding at zero. No change in volume.
+	\item POOL layer will perform a downsampling operation along the spatial dimensions (width, height).
+	\item FC (i.e. fully-connected) layer will compute the class scores
+	\item Each Layer may or may not have parameters (e.g. CONV/FC do, RELU/POOL don’t)
+	\item Each Layer may or may not have additional hyperparameters (e.g. CONV/FC/POOL do, RELU doesn’t)
+\end{itemize}
+
+\subsubsection{Convolutional Layer}
+
+The CONV layer’s parameters consist of a set of learnable filters. Every filter is small spatially (along width and height), but extends through the full depth of the input volume. 
+
+During the forward pass, we slide (more precisely, convolve) each filter across the width and height of the input volume and compute dot products between the entries of the filter and the input at any position. As we slide the filter over the width and height of the input volume we will produce a 2-dimensional activation map that gives the responses of that filter at every spatial position. Intuitively, the network will learn filters that activate when they see some type of visual feature such as an edge of some orientation or a blotch of some color on the first layer. 
+
+We will have an entire set of filters in each CONV layer (e.g. 12 filters), and each of them will produce a separate 2-dimensional activation map. We will stack these activation maps along the depth dimension and produce the output volume.
+
+Another view is that every entry in the 3D output volume can also be interpreted as an output of a neuron that looks at only a small region in the input and shares parameters with all neurons to the left and right spatially.
+
+We will connect each neuron to only a local region of the input volume. The spatial extent of this connectivity is a hyperparameter called the receptive field of the neuron (equivalently this is the filter size). The extent of the connectivity along the depth axis is always equal to the depth of the input volume. 
+
+Three hyperparameters control the size of the output volume: the \textbf{depth, stride and zero-padding}. First, the depth of the output volume is a hyperparameter: it corresponds to the number of filters we would like to use, each learning to look for something different in the input. Sometimes it will be convenient to pad the input volume with zeros around the border. It ensures that the input volume and output volume will have the same size spatially.The size of this zero-padding is a hyperparameter. The nice feature of zero padding is that it will allow us to control the spatial size of the output volumes (most commonly we use it to exactly preserve the spatial size of the input volume so the input and output width and height are the same).
+
+\textbf{For input volume size (W), the receptive field size of the Conv Layer neurons (F), the stride with which they are applied (S), and the amount of zero padding used (P) on the border, the number of neurons is given by \((W-F+2P)/S + 1\)}
+
+A real example is that of ALexNet where they used neurons with receptive field size F=11, stride S=4 and no zero padding P=0. Since (227 - 11)/4 + 1 = 55, and since the Conv layer had a depth of K=96, the Conv layer output volume had size [55x55x96]. Each of the 55*55*96 neurons in this volume was connected to a region of size [11x11x3] in the input volume. Moreover, all 96 neurons in each depth column are connected to the same [11x11x3] region of the input, but of course with different weights.
+
+Parameter sharing scheme is used in Convolutional Layers to control the number of parameters. Using the real-world example above, we see that there are 55*55*96 = 290,400 neurons in the first Conv Layer, and each has 11*11*3 = 363 weights and 1 bias. Together, this adds up to 290400 * 364 = 105,705,600 parameters on the first layer of the ConvNet alone. Clearly, this number is very high.
+
+Hence, there is a \textbf{Parameter sharing scheme} is used in Convolutional Layers to control the number of parameters. It turns out that we can dramatically reduce the number of parameters by making one reasonable assumption: That if one feature is useful to compute at some spatial position (x,y), then it should also be useful to compute at a different position (x2,y2). In other words, denoting a single 2-dimensional slice of depth as a depth slice (e.g. a volume of size [55x55x96] has 96 depth slices, each of size [55x55]), \textbf{we are going to constrain the neurons in each depth slice to use the same weights and bias}. With this parameter sharing scheme, the first Conv Layer in our example would now have only 96 unique set of weights (one for each depth slice), for a total of 96*11*11*3 = 34,848 unique weights, or 34,944 parameters (+96 biases). Alternatively, all 55*55 neurons in each depth slice will now be using the same parameters. In practice during backpropagation, every neuron in the volume will compute the gradient for its weights, but these gradients will be added up across each depth slice and only update a single set of weights per slice.
+
+\textbf{Backpropagation. }The backward pass for a convolution operation (for both the data and the weights) is also a convolution (but with spatially-flipped filters).
+
+\subsubsection{Pooling Layer}
+
+Its function is to progressively reduce the spatial size of the representation to reduce the amount of parameters and computation in the network, and hence to also control overfitting.
+
+\begin{itemize}
+	\item Accepts a volume of size \(W_1 \times H_1 \times D_1\)
+	\item Requires two hyperparameters:
+		\begin{itemize}
+			\item their spatial extent \(F\),
+			\item the stride \(S\),
+		\end{itemize}
+	\item Produces a volume of size \(W_2 \times H_2 \times D_2\) where:
+		\begin{itemize}
+			\item \(W_2 = (W_1 $-$ F)/S+1\)
+			\item \(H_2 = (H_1 $-$ F)/S+1\)
+			\item \(D_2 = D_1\)
+		\end{itemize}
+	\item Introduces zero parameters since it computes a fixed function of the input
+	\item Note that it is not common to use zero-padding for Pooling layers
+\end{itemize}
+
+
+\textbf{Backpropagation.}The backward pass for a max(x, y) operation has a simple interpretation as only routing the gradient to the input that had the highest value in the forward pass. Hence, during the forward pass of a pooling layer it is common to keep track of the index of the max activation (sometimes also called the switches) so that gradient routing is efficient during backpropagation.
+
+Sometimes, pooling is disregarded as in training good generative models, such as variational autoencoders (VAEs) or generative adversarial networks (GANs)
+
+\subsubsection{Fully Connected Layer}
+
+Neurons in a fully connected layer have full connections to all activations in the previous layer, as seen in regular Neural Networks. 
+
+Any FC layer can be converted to a CONV layer. For example, an FC layer with \(K=4096\) that is looking at some input volume of size \(7 \times 7 \times 512\) can be equivalently expressed as a CONV layer with \(F=7,P=0,S=1,K=4096\). In other words, we are setting the filter size to be exactly the size of the input volume, and hence the output will simply be \(1 \times 1 \times 4096\) since only a single depth column 'fits' across the input volume, giving identical result as the initial FC layer.
+
+
+
+
+%\begin{table}
+%	\centering
+%	\begin{tabular}{|c|c|c|c|}
+%		\hline
+%		Table1 Size & Table2 Size & Disk I/Os & Time(ms) \\\hline
+%		20 & 20 & 3593 & 266906\\
+%		30 & 30 & 4212 & 387113\\
+%		50 & 50 & 7457 & 552559\\
+%		70 & 70 & 16195 & 1.25760e+06\\
+%		100 & 100 & 22418 & 1.66148e+06\\ 
+%		200 & 200 & 48057 & 3.55844e+06\\ \hline
+%	\end{tabular}
+%	\caption{\label{tab:widgets}Comparison of Total Time taken and Number of Disk I/Os as Relation size increases post optimization}
+%\end{table}
+
+%\begin{figure} 
+%	\centering
+%	\includegraphics[width=1\textwidth]{dio.png}
+%	\caption{\label{fig:data}Number of Disk I/Os vs Relation Size}
+%\end{figure}
+%
+%\begin{figure} 
+%	\centering
+%	\includegraphics[width=1\textwidth]{time.png}
+%	\caption{\label{fig:data}Time elapsed vs Relation Size}
+%\end{figure}
+
+\begin{appendices}
+	
+\section{A simple neural network model for recognizing digits on MNIST data}
+
+The following code sets up few layers of fully connected neural network. \textbf{The accuracy given by this model over MNIST data is 97.56\%.}\\
+
+\noindent\texttt{import tensorflow as tf\\
+mnist = tf.keras.datasets.mnist\\
+from keras.utils import np\_utils\\\\
+tf.logging.set\_verbosity(tf.logging.ERROR)\\\\
+from tensorflow.examples.tutorials.mnist import input\_data\\
+mnist = input\_data.read\_data\_sets("MNIST\_data", one\_hot=True)\\\\
+\# Python optimisation variables\\
+learning\_rate = 0.5\\
+epochs = 10\\
+batch\_size = 100\\\\
+\# training data placeholders\\
+x = tf.placeholder(tf.float32, [None, 784])\\
+y = tf.placeholder(tf.float32, [None, 10])\\\\
+\# weights connecting the input to the hidden layer\\
+W1 = tf.Variable(tf.random\_normal([784, 600], stddev=0.03), name='W1')\\
+b1 = tf.Variable(tf.random\_normal([600]), name='b1')\\
+\# more layers for experimenting \\
+\# W11 = tf.Variable(tf.random\_normal([600, 500], stddev=0.03), name='W11')\\
+\# b11 = tf.Variable(tf.random\_normal([500]), name='b11')\\
+\# W12 = tf.Variable(tf.random\_normal([500, 300], stddev=0.03), name='W12')\\
+\# b12 = tf.Variable(tf.random\_normal([300]), name='b12')\\
+\# weights connecting the hidden layer to the output layer\\
+W2 = tf.Variable(tf.random\_normal([300, 10], stddev=0.03), name='W2')\\
+b2 = tf.Variable(tf.random\_normal([10]), name='b2')\\\\
+\# output of the hidden layer\\
+h1 = tf.add(tf.matmul(x,W1), b1)\\
+a1 = tf.nn.relu(h1)\\
+\# h11 = tf.add(tf.matmul(a1,W11), b11)\\
+\# a11 = tf.nn.relu(h11)\\
+\# h12 = tf.add(tf.matmul(a11,W12), b12)\\
+\# a12 = tf.nn.relu(h12)\\\\
+\# output layer\\
+\# y\_ = tf.nn.softmax(tf.add(tf.matmul(a12, W2), b2))\\
+y\_ = tf.nn.softmax(tf.add(tf.matmul(a1, W2), b2))\\\\
+y\_clipped = tf.clip\_by\_value(y\_, 1e-10, 0.9999999)\\
+cross\_entropy = -tf.reduce\_mean(tf.reduce\_sum(y * tf.log(y\_clipped)
++ (1 - y) * tf.log(1 - y\_clipped), axis=1))\\
+optimiser = tf.train.GradientDescentOptimizer(learning\_rate=learning\_rate).minimize(\\cross\_entropy)\\\\
+init\_op = tf.global\_variables\_initializer()\\
+correct\_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y\_, 1))\\
+accuracy = tf.reduce\_mean(tf.cast(correct\_prediction, tf.float32))\\\\
+\# start the session\\
+with tf.Session() as sess:}
+
+\texttt{\# initialise the variables}
+
+\texttt{sess.run(init\_op)}
+
+\texttt{total\_batch = int(len(mnist.train.labels) / batch\_size)}
+
+\texttt{for epoch in range(epochs):}
+
+\texttt{\hspace{1em}avg\_cost = 0}
+
+\texttt{\hspace{1em}for i in range(total\_batch):}
+
+\texttt{\hspace{2em} batch\_x, batch\_y = mnist.train.next\_batch(batch\_size=batch\_size)}
+
+\texttt{\hspace{2em} \_, c = sess.run([optimiser, cross\_entropy],}
+
+\texttt{\hspace{5em} feed\_dict={x: batch\_x, y: batch\_y})\\}
+
+\texttt{\hspace{1em} avg\_cost += c / total\_batch}
+
+\texttt{print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg\_cost))\\}
+\texttt{\hspace{1em} print(sess.run(accuracy, feed\_dict={x: mnist.test.images, y: mnist.test.labels}))\\}
+	
+	
+\section{CIFAR-10 image recognition using ConvNet}
+
+
+
+\end{appendices}
+
+\begin{thebibliography}{9}
+\bibitem{1}
+CS231n: Convolutional Neural Networks for Visual Recognition
+
+\bibitem{2}
+Goodfellow et al, Deep Learning, MIT Press, 2016
+
+\bibitem{3}
+“Python TensorFlow Tutorial - Build a Neural Network.” Adventures in Machine Learning, 11 Aug. 2018, adventuresinmachinelearning.com/python-tensorflow-tutorial/.
+
+\end{thebibliography}
+\end{document}
