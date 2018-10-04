@@ -11,6 +11,16 @@
 \usepackage{float}
 \usepackage{afterpage}
 \usepackage[toc,page]{appendix}
+\usepackage{lmodern}  % for bold teletype font
+\usepackage{amsmath}  % for \hookrightarrow
+\usepackage{xcolor}   % for \textcolor
+\lstset{
+	basicstyle=\ttfamily,
+	columns=fullflexible,
+	frame=single,
+	breaklines=true,
+	postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
 
 \newcommand\blankpage{%
 	\null
@@ -414,86 +424,215 @@ Any FC layer can be converted to a CONV layer. For example, an FC layer with \(K
 %	\caption{\label{fig:data}Time elapsed vs Relation Size}
 %\end{figure}
 
+\newpage
 \begin{appendices}
 	
 \section{A simple neural network model for recognizing digits on MNIST data}
 
-The following code sets up few layers of fully connected neural network. \textbf{The accuracy given by this model over MNIST data is 97.56\%.}\\
+The following code sets up few layers of fully connected neural network. The accuracy given by this model over MNIST data is 97.56\%.\\
 
-\noindent\texttt{import tensorflow as tf\\
-mnist = tf.keras.datasets.mnist\\
-from keras.utils import np\_utils\\\\
-tf.logging.set\_verbosity(tf.logging.ERROR)\\\\
-from tensorflow.examples.tutorials.mnist import input\_data\\
-mnist = input\_data.read\_data\_sets("MNIST\_data", one\_hot=True)\\\\
-\# Python optimisation variables\\
-learning\_rate = 0.5\\
-epochs = 10\\
-batch\_size = 100\\\\
-\# training data placeholders\\
-x = tf.placeholder(tf.float32, [None, 784])\\
-y = tf.placeholder(tf.float32, [None, 10])\\\\
-\# weights connecting the input to the hidden layer\\
-W1 = tf.Variable(tf.random\_normal([784, 600], stddev=0.03), name='W1')\\
-b1 = tf.Variable(tf.random\_normal([600]), name='b1')\\
-\# more layers for experimenting \\
-\# W11 = tf.Variable(tf.random\_normal([600, 500], stddev=0.03), name='W11')\\
-\# b11 = tf.Variable(tf.random\_normal([500]), name='b11')\\
-\# W12 = tf.Variable(tf.random\_normal([500, 300], stddev=0.03), name='W12')\\
-\# b12 = tf.Variable(tf.random\_normal([300]), name='b12')\\
-\# weights connecting the hidden layer to the output layer\\
-W2 = tf.Variable(tf.random\_normal([300, 10], stddev=0.03), name='W2')\\
-b2 = tf.Variable(tf.random\_normal([10]), name='b2')\\\\
-\# output of the hidden layer\\
-h1 = tf.add(tf.matmul(x,W1), b1)\\
-a1 = tf.nn.relu(h1)\\
-\# h11 = tf.add(tf.matmul(a1,W11), b11)\\
-\# a11 = tf.nn.relu(h11)\\
-\# h12 = tf.add(tf.matmul(a11,W12), b12)\\
-\# a12 = tf.nn.relu(h12)\\\\
-\# output layer\\
-\# y\_ = tf.nn.softmax(tf.add(tf.matmul(a12, W2), b2))\\
-y\_ = tf.nn.softmax(tf.add(tf.matmul(a1, W2), b2))\\\\
-y\_clipped = tf.clip\_by\_value(y\_, 1e-10, 0.9999999)\\
-cross\_entropy = -tf.reduce\_mean(tf.reduce\_sum(y * tf.log(y\_clipped)
-+ (1 - y) * tf.log(1 - y\_clipped), axis=1))\\
-optimiser = tf.train.GradientDescentOptimizer(learning\_rate=learning\_rate).minimize(\\cross\_entropy)\\\\
-init\_op = tf.global\_variables\_initializer()\\
-correct\_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y\_, 1))\\
-accuracy = tf.reduce\_mean(tf.cast(correct\_prediction, tf.float32))\\\\
-\# start the session\\
-with tf.Session() as sess:}
+\begin{lstlisting}[language=python]
+import tensorflow as tf
+mnist = tf.keras.datasets.mnist
+from keras.utils import np_utils
+import numpy as np
 
-\texttt{\# initialise the variables}
+tf.logging.set_verbosity(tf.logging.ERROR)
 
-\texttt{sess.run(init\_op)}
+from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
 
-\texttt{total\_batch = int(len(mnist.train.labels) / batch\_size)}
+learning_rate = 0.5
+epochs = 10
+batch_size = 100
 
-\texttt{for epoch in range(epochs):}
+# input x - for 28 x 28 pixels = 784, output: 10
+x = tf.placeholder(tf.float32, [None, 784])
+y = tf.placeholder(tf.float32, [None, 10])
 
-\texttt{\hspace{1em}avg\_cost = 0}
+W1 = tf.Variable(tf.random_normal([784, 300], stddev=0.03), name='W1')
+b1 = tf.Variable(tf.random_normal([300]), name='b1')
+W2 = tf.Variable(tf.random_normal([300, 10], stddev=0.03), name='W2')
+b2 = tf.Variable(tf.random_normal([10]), name='b2')
 
-\texttt{\hspace{1em}for i in range(total\_batch):}
+# calculate the output of the hidden layer
+h1 = tf.add(tf.matmul(x,W1), b1)
+a1 = tf.nn.relu(h1)
 
-\texttt{\hspace{2em} batch\_x, batch\_y = mnist.train.next\_batch(batch\_size=batch\_size)}
+# output layer
+# y_ = tf.nn.softmax(tf.add(tf.matmul(a12, W2), b2))
+y_ = tf.nn.softmax(tf.add(tf.matmul(a1, W2), b2))
 
-\texttt{\hspace{2em} \_, c = sess.run([optimiser, cross\_entropy],}
+y_clipped = tf.clip_by_value(y_, 1e-10, 0.9999999)
+cross_entropy = -tf.reduce_mean(tf.reduce_sum(y * tf.log(y_clipped)
++ (1 - y) * tf.log(1 - y_clipped), axis=1))
 
-\texttt{\hspace{5em} feed\_dict={x: batch\_x, y: batch\_y})\\}
+optimiser = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cross_entropy)
 
-\texttt{\hspace{1em} avg\_cost += c / total\_batch}
+init_op = tf.global_variables_initializer()
 
-\texttt{print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg\_cost))\\}
-\texttt{\hspace{1em} print(sess.run(accuracy, feed\_dict={x: mnist.test.images, y: mnist.test.labels}))\\}
+correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+with tf.Session() as sess:
+	# initialise the variables
+	sess.run(init_op)
+	total_batch = int(len(mnist.train.labels) / batch_size)
+	for epoch in range(epochs):
+		avg_cost = 0
+		for i in range(total_batch):
+			batch_x, batch_y = mnist.train.next_batch(batch_size=batch_size)
+			_, c = sess.run([optimiser, cross_entropy], 
+				feed_dict={x: batch_x, y: batch_y})
+			avg_cost += c / total_batch
+		print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost))
+	print(sess.run(accuracy, feed_dict={x: mnist.test.images, y: mnist.test.labels}))
+
+\end{lstlisting}
+
+\newpage
+\section{ConvNet for CIFAR-10 Image recognition}
+
+To classify the images in the MNIST dataset we used the following CNN architecture. The summary after run was: 'loss': 1.4672284, 'global\_step': 20000, 'accuracy': 0.4837
+
+\begin{itemize}
+	\item Convolutional Layer \#1: Applies 64 3x3 filters, with ReLU activation function
+	\item Pooling Layer \#2: Performs max pooling with a 2x2 filter and stride of 2
+	\item Convolutional Layer \#1: Applies 64 3x3 filters, with ReLU activation function
+	\item Pooling Layer \#2: Performs max pooling with a 2x2 filter and stride of 2
+	\item Dense Layer \#1: 512 neurons, with dropout regularization rate of 0.4
+	\item Dense Layer \#2: (Logits Layer): 10 neurons, one for each image class.
+\end{itemize}
+
+\begin{lstlisting}[language=python]
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from keras.datasets import cifar10
+
+import numpy as np
+import tensorflow as tf
+
+tf.logging.set_verbosity(tf.logging.INFO)
+
+def cnn_model_fn(features, labels, mode):
+	# Reshape X to 4-D tensor: [batch_size, width, height, channels]
+	input_layer = tf.reshape(features["x"], [-1, 32, 32, 3])
+	
+	# Input Tensor Shape: [batch_size, 32, 32, 3]
+	# Output Tensor Shape: [batch_size, 32, 32, 32]
+	conv1 = tf.layers.conv2d(
+				inputs=input_layer,
+				filters=32,
+				kernel_size=[3, 3],
+				padding="same",
+				activation=tf.nn.relu)
+	
+	# Input Tensor Shape: [batch_size, 32, 32, 32]
+	# Output Tensor Shape: [batch_size, 16, 16, 32]
+	pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+	
+	# Input Tensor Shape: [batch_size, 32, 32, 32]
+	# Output Tensor Shape: [batch_size, 32, 32, 64]
+	conv2 = tf.layers.conv2d(
+				inputs=pool1,
+				filters=64,
+				kernel_size=[3, 3],
+				padding="same",
+				activation=tf.nn.relu)
+	
+	# Input Tensor Shape: [batch_size, 16, 16, 64]
+	# Output Tensor Shape: [batch_size, 8, 8, 64]
+	pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+	
+	# Flatten tensor into a batch of vectors
+	# Input Tensor Shape: [batch_size, 8, 8, 64]
+	# Output Tensor Shape: [batch_size, 8 * 8 * 64]
+	pool2_flat = tf.reshape(pool2, [-1, 8 * 8 * 64])
+	
+	# Input Tensor Shape: [batch_size, 8 * 8 * 64]
+	# Output Tensor Shape: [batch_size, 512]
+	dense = tf.layers.dense(inputs=pool2_flat, units=512, activation=tf.nn.relu)
+	
+	dropout = tf.layers.dropout(
+		inputs=dense, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+	
+	# Input Tensor Shape: [batch_size, 512]
+	# Output Tensor Shape: [batch_size, 10]
+	logits = tf.layers.dense(inputs=dropout, units=10)
+	
+	predictions = {
+		# Generate predictions (for PREDICT and EVAL mode)
+		"classes": tf.argmax(input=logits, axis=1),
+		"probabilities": tf.nn.softmax(logits, name="softmax_tensor")
+	}
+	if mode == tf.estimator.ModeKeys.PREDICT:
+		return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
+	
+	loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+	
+	# Configure the Training Op (for TRAIN mode)
+	if mode == tf.estimator.ModeKeys.TRAIN:
+		optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+		train_op = optimizer.minimize(
+			loss=loss,
+			global_step=tf.train.get_global_step())
+		return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
+	
+	# Add evaluation metrics (for EVAL mode)
+	eval_metric_ops = {
+		"accuracy": tf.metrics.accuracy(
+		labels=labels, predictions=predictions["classes"])}
+	return tf.estimator.EstimatorSpec(
+		mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 	
 	
-\section{CIFAR-10 image recognition using ConvNet}
+def main():
+	(X_train, y_train), (X_test, y_test) = cifar10.load_data()
+	print('X_train shape:', X_train.shape)
+	print(X_train.shape[0], 'train samples')
+	print(X_test.shape[0], 'test samples')
+	
+	Y_train = np.asarray(y_train, dtype=np.int32)
+	Y_test = np.asarray(y_test, dtype=np.int32)
+	
+	X_train = X_train.astype('float32')
+	X_test = X_test.astype('float32')
+	X_train /= 255
+	X_test /= 255
+	
+	# Create the Estimator
+	mnist_classifier = tf.estimator.Estimator(
+	model_fn=cnn_model_fn, model_dir="/tmp/mnist_convnet_model")
+	
+	# Train the model
+	train_input_fn = tf.estimator.inputs.numpy_input_fn(
+		x={"x": X_train},
+		y=Y_train,
+		batch_size=100,
+		num_epochs=None,
+		shuffle=True)
+	mnist_classifier.train(
+		input_fn=train_input_fn,
+		steps=20000)
+	
+	# Evaluate the model and print results
+	eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+		x={"x": X_test},
+		y=Y_test,
+		num_epochs=1,
+		shuffle=False)
+	eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
+	print(eval_results)
 
-
+if __name__ == "__main__":
+	tf.app.run()	
+	
+\end{lstlisting}
 
 \end{appendices}
 
+\newpage
 \begin{thebibliography}{9}
 \bibitem{1}
 CS231n: Convolutional Neural Networks for Visual Recognition
@@ -505,4 +644,12 @@ Goodfellow et al, Deep Learning, MIT Press, 2016
 “Python TensorFlow Tutorial - Build a Neural Network.” Adventures in Machine Learning, 11 Aug. 2018, adventuresinmachinelearning.com/python-tensorflow-tutorial/.
 
 \end{thebibliography}
+
+\newpage
+\begin{appendices}
+	
+	as
+	
+\end{appendices}
+
 \end{document}

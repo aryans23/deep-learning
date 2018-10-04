@@ -43,3 +43,5 @@
 \BOOKMARK [3][-]{subsubsection.6.2.3}{Fully Connected Layer}{subsection.6.2}% 43
 \BOOKMARK [1][-]{section*.2}{Appendices}{}% 44
 \BOOKMARK [1][-]{Appendix.1.A}{A simple neural network model for recognizing digits on MNIST data}{}% 45
+\BOOKMARK [1][-]{Appendix.1.B}{ConvNet for CIFAR-10 Image recognition}{}% 46
+\BOOKMARK [1][-]{section*.4}{Appendices}{}% 47

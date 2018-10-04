@@ -42,5 +42,7 @@
 \contentsline {subsubsection}{\numberline {6.2.1}Convolutional Layer}{13}{subsubsection.6.2.1}
 \contentsline {subsubsection}{\numberline {6.2.2}Pooling Layer}{14}{subsubsection.6.2.2}
 \contentsline {subsubsection}{\numberline {6.2.3}Fully Connected Layer}{15}{subsubsection.6.2.3}
-\contentsline {section}{Appendices}{15}{section*.2}
-\contentsline {section}{\numberline {A}A simple neural network model for recognizing digits on MNIST data}{15}{Appendix.1.A}
+\contentsline {section}{Appendices}{16}{section*.2}
+\contentsline {section}{\numberline {A}A simple neural network model for recognizing digits on MNIST data}{16}{Appendix.1.A}
+\contentsline {section}{\numberline {B}ConvNet for CIFAR-10 Image recognition}{18}{Appendix.1.B}
+\contentsline {section}{Appendices}{23}{section*.4}
