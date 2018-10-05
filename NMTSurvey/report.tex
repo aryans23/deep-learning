@@ -89,23 +89,23 @@
 \subsection{Role of Context Types and Dimentionality in Learning Word Embeddings}
 \label{sec:embdim}
 
-	Word embeddings are evaluated on \textit{intrinsic} and \textit{extrinsic} tasks. Intrinsic tasks mostly include predicting human judgments of semantic relations between words whereas extrinsic tasks include various 'real' downstream NLP tasks, such as coreference resolution and sentiment analysis. Recent works have shown that while intrinsic evaluations are easier to perform, their correlation with results on extrinsic evaluations is not very reliable. In the work by Melamud et al. \cite{melamud}, an extensive evaluation of word embeddings learned with different types of context has been provided. It compared window based embeddings with dependency-based word embeddings \cite{dep} and substitute based word embeddings \cite{subs}. The task was performed for Dependency Parsing, Named-Entity-Recognition, Coreference Resolution, and Sentiment Analysis. 
+	Word embeddings are evaluated on \textit{intrinsic} and \textit{extrinsic} tasks. Intrinsic tasks mostly include predicting human judgments of semantic relations between words whereas extrinsic tasks include various 'real' downstream NLP tasks, such as coreference resolution and sentiment analysis. Recent works have shown that while intrinsic evaluations are easier to perform, their correlation with results on extrinsic evaluations is not very reliable. In the work by Melamud et al. \cite{melamud}, an extensive evaluation of word embeddings learned with different types of context has been provided. It compared window based embeddings with dependency-based word embeddings and substitute based word embeddings. The task was performed for Dependency Parsing, Named-Entity-Recognition, Coreference Resolution, and Sentiment Analysis. 
 	
-	They observed that while the performance improved as the number of dimension increases, there was significant difference using different types of context. It was more evident in WordSim-353-R task \cite{finkel} which includes 353 word pairs manually annotated with a degree of similarity and focuses on functional and topical similarities. The performance decreased with decrease in window size and the largest window embedding performed the best. For the extrinsic tasks, they observed that performance degraded with using too man dimensions. This was in contrast to intrinsic task where higher dimentionality usually yields better results. They also combined the embeddings by simple concatanation and found that the performance depended on the dimensionality and the task at hand. 
+	They observed that while the performance improved as the number of dimension increases, there was significant difference using different types of context. It was more evident in WordSim-353-R task which includes 353 word pairs manually annotated with a degree of similarity and focuses on functional and topical similarities. The performance decreased with decrease in window size and the largest window embedding performed the best. For the extrinsic tasks, they observed that performance degraded with using too man dimensions. This was in contrast to intrinsic task where higher dimentionality usually yields better results. They also combined the embeddings by simple concatenation and found that the performance depended on the dimensionality and the task at hand. 
 
 \section{Advancement of Recurrent Neural Networks in NLP}
 \label{sec:seqnlp}
 
 	Deep Neural Networks (DNN) have been successful in many difficult learning tasks. Despite their flexibility and power, they cannot be used to map sequences to sequences and are only valid for problems whose inputs and targets can be sensibly encoded with vectors of fixed dimentionality. This is a huge limitation since most problems can be best expressed with sequences whose lenghts are not know a-priori. This lead to the idea of Recurrent Neural Networks (RNNs).
 	
-	RNNs has the ability to capture the inherent sequential nature present in the language and is tailor made for modeling context dependencies in NLP. They are also effective in encoding a variable length of text, including long sentences, paragraphs and even documents (Discussed in Appendix \ref{sec:rnn}). Unlike CNN, RNN have flexible computational steps that provide better modeling capability and create possibility to capture unbounded context. The basic RNNs suffered from the problem of vanishing gradient ((Discussed in Appendix \ref{sec:van}) and thus led to the development of Gated Recurrent Networks(GRU) (Discussed in Appendix \ref{sec:gru}), Long Short Term Memory(LSTM) ((Discussed in Appendix \ref{sec:lstm})).
+	RNNs has the ability to capture the inherent sequential nature present in the language and is tailor made for modeling context dependencies in NLP. They are also effective in encoding a variable length of text, including long sentences, paragraphs and even documents (Discussed in Appendix \ref{sec:rnn}). Unlike CNN, RNN have flexible computational steps that provide better modeling capability and create possibility to capture unbounded context. The basic RNNs suffered from the problem of vanishing gradient (Discussed in Appendix \ref{sec:van}) and thus led to the development of Gated Recurrent Networks(GRU) (Discussed in Appendix \ref{sec:gru}), Long Short Term Memory(LSTM) (Discussed in Appendix \ref{sec:lstm}).
 	
 	In this section, we surveyed the papers that have used the variants of RNNs in NLP. In Sutskevar et al. \cite{suts}, a general end to end multi layered sequence learning model was proposed. This pioneering model in LSTM is discussed in \ref{sec:suts}. In \ref{sec:pos} we discuss a deep Bi-LSTM model from Plank et al. \cite{pos}, which combines the POS tagging loss function with an auxiliary loss function that accounts for rare words. There has been a lot of reserach in the area of opinion mining and sentimet analysis about reviews of products. We discuss a paper from Ruder et al. in \ref{sec:senti}, in which a hierarchical bidirectional LSTM is proposed and is shown to out-perform non-hierarchical models. It builds upon the intuition that sentences in a review elaborate and build upon each other. All these section focuses on the develpment of RNN (or LSTM and their variants) as a plausible model to construct state of the art NLP tools. 
 
 \subsection{Sequence to Sequence Learning with Neural Networks}
 \label{sec:suts}
 	
-	In the paper \cite{suts}, the authors applied multi-layered Long Short-Term Memory (LSTM) \ref{sec:lstm} to map input sequence to a vector of fixed dimentionality. Given a sequence of inputs \((x_1, ... , x_T)\), a standard RNN computes a sequence of outputs \(y_1, ..., y_T\) by iterating the following equations:
+	In the paper \cite{suts}, the authors applied multi-layered Long Short-Term Memory (LSTM) (Appendix \ref{sec:lstm}) to map input sequence to a vector of fixed dimentionality. Given a sequence of inputs \((x_1, ... , x_T)\), a standard RNN computes a sequence of outputs \(y_1, ..., y_T\) by iterating the following equations:
 	\[h_t = sigm(W^{hx} x_t + W^{hh} h_{t-1})\]
 	\[y_t = W^{yh} h_t\]
 	
@@ -340,7 +340,7 @@
 	
 	Here \(||\bullet||\) is the Forbenius norm of a matrix. The authors did not go with KL divergence instead as a penalization term because the vast number of zeros in the annotation matrix \(A\) makes the training unstable. Also KL divergence penalty wouldn't have allowed each individual row to focus on a single aspect of semantics. 
 	
-\subsection{Google's Neural Machine Translation System}
+\section{Google's Neural Machine Translation System}
 \label{sec:goognmt}
 
 	Google's production machine translation system was largely based on phrase-based. NMT, however promissing, were slower in training and inference and were ineffective in dealing with rare words. The paper Wu et al. \cite{goognmt} proposes to solve such problems. The encoders used were LSTM with 8 layers with the first layer being a bidirectional one to gain more context from the input. The decoder is implemented as a combination of RNN network with softmax layer. To model differences between an intermediate layers' outputs, residual connections were used between layers to encourage gradient flow. They also improved the inference time by using low-precision arithmetic for inference computing on special hardware (TPUs). They used attention module similar to Bahdanau et al. \cite{bahattn}. The design has been shown in Figure \ref{fig:goognmt}.
@@ -510,14 +510,14 @@
 
 	\begin{figure}
 		\centering
-		\begin{subfigure}{0.49\textwidth}
+		\begin{subfigure}{0.4\textwidth}
 			\label{fig:gru}
 			\centering
 			\includegraphics[width=1\textwidth]{fig/gru.png}
 			\caption{Gated Recurrent Unit}
 		\end{subfigure}
 		\hspace*{\fill} % separation between the subfigures
-		\begin{subfigure}{0.49\textwidth}
+		\begin{subfigure}{0.4\textwidth}
 			\label{fig:lstm}
 			\centering
 			\includegraphics[width=1\textwidth]{fig/lstm.png}
